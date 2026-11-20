@@ -84,6 +84,53 @@ nox -s docs -- serve
 nox -s build
 ```
 
+### Running the Ubuntu tests on Modal
+
+Contributors with a Modal account can test a commit reachable from
+`pybind/pybind11` without building locally. Install [uv][] and authenticate
+once with `uvx modal setup`. From this checkout, run
+`uv run tools/modal_ci.py SHA` with a full 40-character commit ID.
+
+The runner creates one Linux VM per shard, with up to eight concurrent build
+jobs per VM. Its 53 shards cover pytest, the CMake interface tests, and the
+CPython embedding tests on six Ubuntu/GCC rows. The `MATRIX` in
+`tools/modal_ci.py` names the corresponding upstream jobs. Add a row there
+with an interpreter build, CMake options and pytest slice count. For a smaller
+run, use `--python 3.13.16`. Add `--single-slice` to run that row's pytest
+suite in one process. Other platforms, compilers, packaging, setuptools
+helpers, visibility tests and the rest of the upstream matrix run separately.
+
+To compare a cold build, a warm build, and an incremental header change, run
+these commands in order in the same Modal environment.
+
+```bash
+uv run tools/modal_ci.py --seed-cache 55df24b349e90a39bc47ed32825206541022fe34
+uv run tools/modal_ci.py 55df24b349e90a39bc47ed32825206541022fe34
+uv run tools/modal_ci.py bbe317649f65915aaddf5a3f3f77e854a8c1b328
+```
+
+Ordinary runs read the baseline and start cold on a miss. Seed with a trusted
+commit. The `--seed-cache` run starts from the toolchain images and replaces the
+baseline only after the full matrix passes. Each snapshot contains a checkout,
+test environment and Ninja build tree. The driver stores the snapshot IDs in
+the `pybind11-test-runner-baseline` Modal Dict, keyed by the runner sources.
+To clear it, run `uvx modal dict clear pybind11-test-runner-baseline`.
+Snapshots expire after seven days, including those from superseded or incomplete
+seeds. Modal caches toolchain images independently.
+
+The script pins the Modal client, Ubuntu image digest, dated Ubuntu build
+packages, guest uv, CMake and interpreter builds. Guest Python packages resolve
+from the commit's `tests/requirements.txt` at run time, as in the GitHub
+workflows. The initial CA certificate installation, driver uv, transitive
+client dependencies and Modal infrastructure can also vary.
+
+Allow a few minutes for the first image build. A matrix run typically takes
+around a minute cold and tens of seconds warm, depending on available capacity.
+Modal bills for sandbox resources. The default uses public VM scheduling.
+`--performance-sensitive` requires a workspace allowlisted by Modal.
+
+[uv]: https://docs.astral.sh/uv/getting-started/installation/
+
 ### Full setup
 
 To setup an ideal development environment, run the following commands on a
