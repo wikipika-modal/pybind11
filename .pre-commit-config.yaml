@@ -47,6 +47,7 @@ repos:
     exclude: ^(tests|docs)/
     additional_dependencies:
     - markdown-it-py
+    - modal==1.6.4
     - nox
     - rich
     - types-setuptools
