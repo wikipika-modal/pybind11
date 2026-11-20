@@ -130,7 +130,12 @@ async def run_shard(
         try:
             proc = await asyncio.wait_for(launch, timeout=120)
         except (asyncio.TimeoutError, modal.exception.TimeoutError) as exc:
-            msg = f"{box.object_id} did not start the worker within 120s. Check capacity in the Modal dashboard."
+            hint = (
+                "Pass --no-performance-sensitive unless Modal has allowlisted this workspace."
+                if args.performance_sensitive
+                else "Check capacity in the Modal dashboard."
+            )
+            msg = f"{box.object_id} did not start the worker within 120s. {hint}"
             raise RuntimeError(msg) from exc
         out, err, code = await asyncio.gather(
             proc.stdout.read.aio(), proc.stderr.read.aio(), proc.wait.aio()
@@ -225,8 +230,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--performance-sensitive",
-        action="store_true",
-        help="use performance-sensitive scheduling (requires a Modal-allowlisted workspace)",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="use performance-sensitive scheduling, which needs a workspace allowlisted by Modal",
     )
     args = parser.parse_args()
     if not re.fullmatch("[0-9a-fA-F]{40}", args.sha):

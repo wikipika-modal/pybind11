@@ -125,9 +125,10 @@ workflows. The initial CA certificate installation, driver uv, transitive
 client dependencies and Modal infrastructure can also vary.
 
 Allow a few minutes for the first image build. A matrix run typically takes
-around a minute cold and tens of seconds warm, depending on available capacity.
-Modal bills for sandbox resources. The default uses public VM scheduling.
-`--performance-sensitive` requires a workspace allowlisted by Modal.
+under a minute cold and around 20 seconds warm, depending on available capacity.
+Modal bills for sandbox resources. The default uses performance-sensitive
+scheduling, which Modal enables per workspace. In a workspace without it, pass
+`--no-performance-sensitive`; a cold run then takes about a minute.
 
 [uv]: https://docs.astral.sh/uv/getting-started/installation/
 
